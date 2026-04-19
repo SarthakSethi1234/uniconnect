@@ -12,11 +12,12 @@ BEGIN
     DECLARE p_cursor CURSOR FOR SELECT title, application_count FROM Team_Proposals;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
     
-    CREATE TEMPORARY TABLE IF NOT EXISTS Temp_Proposal_Report (
+    DROP TEMPORARY TABLE IF EXISTS Temp_Proposal_Report;
+    CREATE TEMPORARY TABLE Temp_Proposal_Report (
+        id INT AUTO_INCREMENT PRIMARY KEY,
         title VARCHAR(200),
         app_count INT
     );
-    TRUNCATE TABLE Temp_Proposal_Report;
 
     OPEN p_cursor;
     read_loop: LOOP
@@ -24,11 +25,12 @@ BEGIN
         IF done THEN
             LEAVE read_loop;
         END IF;
-        INSERT INTO Temp_Proposal_Report VALUES (p_title, p_app_count);
+        INSERT INTO Temp_Proposal_Report (title, app_count) VALUES (p_title, p_app_count);
     END LOOP;
     CLOSE p_cursor;
     
-    SELECT * FROM Temp_Proposal_Report;
+    SELECT title, app_count FROM Temp_Proposal_Report;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Proposal_Report;
 END; //
 
 -- 2. Listing applicants per proposal
@@ -45,11 +47,12 @@ BEGIN
         WHERE a.proposal_id = p_proposal_id;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
     
-    CREATE TEMPORARY TABLE IF NOT EXISTS Temp_Applicants (
+    DROP TEMPORARY TABLE IF EXISTS Temp_Applicants;
+    CREATE TEMPORARY TABLE Temp_Applicants (
+        id INT AUTO_INCREMENT PRIMARY KEY,
         applicant_name VARCHAR(100),
         status VARCHAR(20)
     );
-    TRUNCATE TABLE Temp_Applicants;
 
     OPEN app_cursor;
     app_loop: LOOP
@@ -57,11 +60,12 @@ BEGIN
         IF done THEN
             LEAVE app_loop;
         END IF;
-        INSERT INTO Temp_Applicants VALUES (a_name, a_status);
+        INSERT INTO Temp_Applicants (applicant_name, status) VALUES (a_name, a_status);
     END LOOP;
     CLOSE app_cursor;
     
-    SELECT * FROM Temp_Applicants;
+    SELECT applicant_name, status FROM Temp_Applicants;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Applicants;
 END; //
 
 -- 3. Generating influence score report
@@ -78,11 +82,12 @@ BEGIN
         ORDER BY sr.influence_score DESC;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
     
-    CREATE TEMPORARY TABLE IF NOT EXISTS Temp_Influence_Report (
+    DROP TEMPORARY TABLE IF EXISTS Temp_Influence_Report;
+    CREATE TEMPORARY TABLE Temp_Influence_Report (
+        id INT AUTO_INCREMENT PRIMARY KEY,
         student_name VARCHAR(100),
         score INT
     );
-    TRUNCATE TABLE Temp_Influence_Report;
 
     OPEN inf_cursor;
     inf_loop: LOOP
@@ -90,11 +95,12 @@ BEGIN
         IF done THEN
             LEAVE inf_loop;
         END IF;
-        INSERT INTO Temp_Influence_Report VALUES (u_name, u_score);
+        INSERT INTO Temp_Influence_Report (student_name, score) VALUES (u_name, u_score);
     END LOOP;
     CLOSE inf_cursor;
     
-    SELECT * FROM Temp_Influence_Report;
+    SELECT student_name, score FROM Temp_Influence_Report;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Influence_Report;
 END; //
 
 -- 4. Skill popularity report
@@ -111,11 +117,12 @@ BEGIN
         ORDER BY freq DESC;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
     
-    CREATE TEMPORARY TABLE IF NOT EXISTS Temp_Skill_Report (
+    DROP TEMPORARY TABLE IF EXISTS Temp_Skill_Report;
+    CREATE TEMPORARY TABLE Temp_Skill_Report (
+        id INT AUTO_INCREMENT PRIMARY KEY,
         skill VARCHAR(50),
         user_count INT
     );
-    TRUNCATE TABLE Temp_Skill_Report;
 
     OPEN skill_cursor;
     skill_loop: LOOP
@@ -123,11 +130,12 @@ BEGIN
         IF done THEN
             LEAVE skill_loop;
         END IF;
-        INSERT INTO Temp_Skill_Report VALUES (s_name, s_count);
+        INSERT INTO Temp_Skill_Report (skill, user_count) VALUES (s_name, s_count);
     END LOOP;
     CLOSE skill_cursor;
     
-    SELECT * FROM Temp_Skill_Report;
+    SELECT skill, user_count FROM Temp_Skill_Report;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Skill_Report;
 END; //
 
 -- 5. Collaboration summary report
@@ -143,11 +151,12 @@ BEGIN
         JOIN Student_Reputation sr ON u.id = sr.user_id;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
     
-    CREATE TEMPORARY TABLE IF NOT EXISTS Temp_Collab_Report (
+    DROP TEMPORARY TABLE IF EXISTS Temp_Collab_Report;
+    CREATE TEMPORARY TABLE Temp_Collab_Report (
+        id INT AUTO_INCREMENT PRIMARY KEY,
         student VARCHAR(100),
         collab_count INT
     );
-    TRUNCATE TABLE Temp_Collab_Report;
 
     OPEN col_cursor;
     col_loop: LOOP
@@ -155,11 +164,12 @@ BEGIN
         IF done THEN
             LEAVE col_loop;
         END IF;
-        INSERT INTO Temp_Collab_Report VALUES (u_name, collab_c);
+        INSERT INTO Temp_Collab_Report (student, collab_count) VALUES (u_name, collab_c);
     END LOOP;
     CLOSE col_cursor;
     
-    SELECT * FROM Temp_Collab_Report;
+    SELECT student, collab_count FROM Temp_Collab_Report;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Collab_Report;
 END; //
 
 -- 6. Proposal summary report
@@ -175,12 +185,13 @@ BEGIN
         FROM Team_Proposals;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
     
-    CREATE TEMPORARY TABLE IF NOT EXISTS Temp_Prop_Sum (
+    DROP TEMPORARY TABLE IF EXISTS Temp_Prop_Sum;
+    CREATE TEMPORARY TABLE Temp_Prop_Sum (
+        id INT AUTO_INCREMENT PRIMARY KEY,
         title VARCHAR(200),
         status VARCHAR(20),
         req_skills VARCHAR(200)
     );
-    TRUNCATE TABLE Temp_Prop_Sum;
 
     OPEN prop_cursor;
     prop_loop: LOOP
@@ -188,21 +199,21 @@ BEGIN
         IF done THEN
             LEAVE prop_loop;
         END IF;
-        INSERT INTO Temp_Prop_Sum VALUES (prop_title, stat, req);
+        INSERT INTO Temp_Prop_Sum (title, status, req_skills) VALUES (prop_title, stat, req);
     END LOOP;
     CLOSE prop_cursor;
     
-    SELECT * FROM Temp_Prop_Sum;
+    SELECT title, status, req_skills FROM Temp_Prop_Sum;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Prop_Sum;
 END; //
 
--- 7. Recommendation iteration (simple loop)
+-- 7. Recommendation iteration
 DROP PROCEDURE IF EXISTS sp_recommendations;
 CREATE PROCEDURE sp_recommendations(IN p_user_id INT)
 BEGIN
     DECLARE done INT DEFAULT 0;
     DECLARE rec_name VARCHAR(100);
     DECLARE shared_course VARCHAR(200);
-    -- Find users who share courses with the given user_id
     DECLARE rec_cursor CURSOR FOR 
         SELECT u2.name, c.course_name
         FROM Student_Courses sc1
@@ -212,11 +223,12 @@ BEGIN
         WHERE sc1.user_id = p_user_id;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
     
-    CREATE TEMPORARY TABLE IF NOT EXISTS Temp_Recommendations (
+    DROP TEMPORARY TABLE IF EXISTS Temp_Recommendations;
+    CREATE TEMPORARY TABLE Temp_Recommendations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
         recommended_student VARCHAR(100),
         shared_course VARCHAR(200)
     );
-    TRUNCATE TABLE Temp_Recommendations;
 
     OPEN rec_cursor;
     rec_loop: LOOP
@@ -224,16 +236,15 @@ BEGIN
         IF done THEN
             LEAVE rec_loop;
         END IF;
-        INSERT INTO Temp_Recommendations VALUES (rec_name, shared_course);
+        INSERT INTO Temp_Recommendations (recommended_student, shared_course) VALUES (rec_name, shared_course);
     END LOOP;
     CLOSE rec_cursor;
     
-    -- Filter out distinct to avoid duplicates if multiple shared courses (or just show all overlaps)
-    SELECT DISTINCT * FROM Temp_Recommendations;
+    SELECT DISTINCT recommended_student, shared_course FROM Temp_Recommendations;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Recommendations;
 END; //
 
--- 8. Handle capacity reduction: When max_members is lowered, iterate pending applications
---    and auto-reject those that exceed the new capacity limit.
+-- 8. Handle capacity reduction
 DROP PROCEDURE IF EXISTS sp_handle_capacity_reduction;
 CREATE PROCEDURE sp_handle_capacity_reduction(IN p_proposal_id INT, IN new_max INT)
 BEGIN
@@ -241,13 +252,10 @@ BEGIN
     DECLARE app_id INT;
     DECLARE current_accepted INT;
 
-    -- First count how many are already accepted
     SELECT COUNT(*) INTO current_accepted
     FROM Applications
     WHERE proposal_id = p_proposal_id AND status = 'accepted';
 
-    -- If accepted count already meets/exceeds new max, reject ALL remaining pending ones
-    -- Use a cursor to iterate over pending applications and reject them one by one
     BEGIN
         DECLARE pending_cursor CURSOR FOR
             SELECT id FROM Applications
@@ -263,10 +271,8 @@ BEGIN
                 LEAVE reject_loop;
             END IF;
 
-            -- If accepted members already fill the new capacity, reject this pending applicant
             IF current_accepted >= new_max THEN
                 UPDATE Applications SET status = 'rejected' WHERE id = app_id;
-                -- Log rejection
                 INSERT INTO Activity_Log (user_id, proposal_id, action_type, description)
                 SELECT applicant_id, p_proposal_id, 'REJECTED',
                        'Auto-rejected: proposal capacity was reduced by creator'
