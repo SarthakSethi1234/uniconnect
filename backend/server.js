@@ -517,8 +517,14 @@ app.delete('/api/admin/proposals/:id', authenticateToken, isAdmin, async (req, r
 /* ---------- ANALYTICS FOR DEMO ---------- */
 app.get('/api/analytics/skills', async (req, res) => {
   try {
-    const [rows] = await pool.query('CALL sp_skill_popularity_report()');
-    res.json(rows[0] ? rows[0] : []);
+    // Direct SQL equivalent of sp_skill_popularity_report (bypasses temp table restriction on Aiven)
+    const [rows] = await pool.query(
+      `SELECT skill_name AS skill, COUNT(user_id) AS user_count
+       FROM Student_Skills
+       GROUP BY skill_name
+       ORDER BY user_count DESC`
+    );
+    res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -526,8 +532,17 @@ app.get('/api/analytics/skills', async (req, res) => {
 
 app.get('/api/analytics/recommendations', authenticateToken, async (req, res) => {
   try {
-    const [rows] = await pool.query('CALL sp_recommendations(?)', [req.user.id]); 
-    res.json(rows[0] ? rows[0] : []);
+    // Direct SQL equivalent of sp_recommendations (bypasses temp table restriction on Aiven)
+    const [rows] = await pool.query(
+      `SELECT DISTINCT u2.name AS recommended_student, c.course_name AS shared_course
+       FROM Student_Courses sc1
+       JOIN Student_Courses sc2 ON sc1.course_id = sc2.course_id AND sc1.user_id != sc2.user_id
+       JOIN Users u2 ON sc2.user_id = u2.id
+       JOIN Courses c ON sc1.course_id = c.id
+       WHERE sc1.user_id = ?`,
+      [req.user.id]
+    );
+    res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
