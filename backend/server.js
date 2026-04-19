@@ -19,6 +19,10 @@ const dbConfig = {
   port: process.env.MYSQLPORT || process.env.DB_PORT || 3306
 };
 
+if (process.env.DB_SSL === 'true') {
+  dbConfig.ssl = { rejectUnauthorized: false };
+}
+
 const pool = mysql.createPool(dbConfig);
 
 /* ---------- MIDDLEWARE ---------- */
