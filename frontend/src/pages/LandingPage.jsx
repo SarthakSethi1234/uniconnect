@@ -64,14 +64,14 @@ export default function LandingPage() {
       {/* ── Hero ── */}
       <section className="landing-hero">
         <div className="landing-hero-inner">
-          <div className="landing-eyebrow">Exclusively for SNU Students</div>
+          <div className="landing-eyebrow">Exclusively for University Students</div>
           <h1 className="landing-hero-title">
             Your campus.<br />
             Your collaborators.<br />
             <span className="landing-gradient-text">Your next big project.</span>
           </h1>
           <p className="landing-hero-sub">
-            UniConnect is the academic collaboration network built for students at Shiv Nadar University. Post project ideas, form smart teams, and build your reputation — all in one place.
+            UniConnect is the academic collaboration network built for university students. Post project ideas, form smart teams, and build your reputation — all in one place.
           </p>
           <div className="landing-hero-cta">
             <Link to="/register" className="landing-btn-primary">Create Free Account</Link>
@@ -123,7 +123,7 @@ export default function LandingPage() {
             <p className="landing-overline">About UniConnect</p>
             <h2 className="landing-section-title">Built by students,<br />for students.</h2>
             <p className="about-body">
-              UniConnect was built as a dedicated academic collaboration platform for the Shiv Nadar University community. Rather than using generic tools like LinkedIn or WhatsApp groups, UniConnect provides a structured, transparent, and reputation-driven environment specifically tailored for university-level teamwork.
+              UniConnect was built as a dedicated academic collaboration platform for the university community. Rather than using generic tools like LinkedIn or WhatsApp groups, UniConnect provides a structured, transparent, and reputation-driven environment specifically tailored for university-level teamwork.
             </p>
             <p className="about-body">
             </p>
@@ -133,7 +133,6 @@ export default function LandingPage() {
               <div className="about-badge">Academic Social Network</div>
               <h3>A better way to form teams</h3>
               <ul className="about-list">
-                <li>✓ SNU email verification</li>
                 <li>✓ Transparent application process</li>
                 <li>✓ Reputation system that rewards collaboration</li>
                 <li>✓ Admin moderation for a safe environment</li>
@@ -148,9 +147,9 @@ export default function LandingPage() {
       <section className="landing-cta-section">
         <div className="landing-cta-inner">
           <h2 className="landing-cta-title">Ready to find your team?</h2>
-          <p className="landing-cta-sub">Join hundreds of SNU students already collaborating on projects, hackathons, and research.</p>
+          <p className="landing-cta-sub">Join hundreds of university students already collaborating on projects, hackathons, and research.</p>
           <Link to="/register" className="landing-btn-primary landing-btn-large">Create Your Account — It's Free</Link>
-          <p className="landing-hero-note" style={{ marginTop: '1rem' }}>Requires @snu.edu.in email</p>
+          <p className="landing-hero-note" style={{ marginTop: '1rem' }}>Requires university email</p>
         </div>
       </section>
 
