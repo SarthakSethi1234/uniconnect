@@ -1,4 +1,4 @@
-USE uniconnect;
+USE defaultdb;
 
 -- 1. Admin Management View
 CREATE OR REPLACE VIEW Admin_Management_View AS

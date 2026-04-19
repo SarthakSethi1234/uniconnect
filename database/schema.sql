@@ -1,5 +1,4 @@
-CREATE DATABASE IF NOT EXISTS uniconnect;
-USE uniconnect;
+USE defaultdb;
 
 CREATE TABLE Users (
     id INT AUTO_INCREMENT PRIMARY KEY,

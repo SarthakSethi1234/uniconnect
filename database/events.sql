@@ -1,4 +1,4 @@
-USE uniconnect;
+USE defaultdb;
 
 SET GLOBAL event_scheduler = ON;
 
