@@ -35,6 +35,27 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+/* ---------- DEBUG ENDPOINT ---------- */
+app.get('/api/debug', async (req, res) => {
+  try {
+    const [tables] = await pool.query("SHOW TABLES");
+    const [views] = await pool.query("SHOW FULL TABLES WHERE Table_type = 'VIEW'");
+    const [procs] = await pool.query("SHOW PROCEDURE STATUS WHERE Db = DATABASE()");
+
+    // Test the exact failing queries
+    let proposalViewTest = null, skillsProcTest = null;
+    try { const [r] = await pool.query('SELECT * FROM Proposal_Summary_View LIMIT 1'); proposalViewTest = { ok: true, rows: r.length }; }
+    catch (e) { proposalViewTest = { ok: false, error: e.message }; }
+
+    try { const [r] = await pool.query('CALL sp_skill_popularity_report()'); skillsProcTest = { ok: true }; }
+    catch (e) { skillsProcTest = { ok: false, error: e.message }; }
+
+    res.json({ tables: tables.length, views, procs: procs.map(p => p.Name), proposalViewTest, skillsProcTest });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 /* ---------- MIDDLEWARE ---------- */
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
