@@ -1,4 +1,4 @@
-USE uniconnect;
+USE defaultdb;
 
 -- 1. Recommendation System
 -- Recommending students based on sharing the same course

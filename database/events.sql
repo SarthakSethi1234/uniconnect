@@ -1,7 +1,5 @@
 USE defaultdb;
 
-SET GLOBAL event_scheduler = ON;
-
 DELIMITER //
 
 -- Event 1: Auto-close proposals past their deadline
