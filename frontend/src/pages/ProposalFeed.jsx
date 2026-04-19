@@ -26,9 +26,9 @@ export default function ProposalFeed() {
       fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/skills`).then(r => r.json()),
       fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/recommendations`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
     ]).then(([props, sks, recs]) => {
-      setProposals(props);
-      setSkills(sks);
-      setRecommendations(recs);
+      setProposals(Array.isArray(props) ? props : []);
+      setSkills(Array.isArray(sks) ? sks : []);
+      setRecommendations(Array.isArray(recs) ? recs : []);
       setLoading(false);
     }).catch(err => { console.error(err); setLoading(false); });
   };

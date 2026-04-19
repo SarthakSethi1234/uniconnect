@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_key_123';
@@ -24,6 +24,16 @@ if (process.env.DB_SSL === 'true') {
 }
 
 const pool = mysql.createPool(dbConfig);
+
+/* ---------- HEALTH CHECK ---------- */
+app.get('/api/health', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT 1 + 1 AS result');
+    res.json({ status: 'ok', db: 'connected', result: rows[0].result, config: { host: dbConfig.host, port: dbConfig.port, database: dbConfig.database, user: dbConfig.user } });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message, config: { host: dbConfig.host, port: dbConfig.port, database: dbConfig.database, user: dbConfig.user } });
+  }
+});
 
 /* ---------- MIDDLEWARE ---------- */
 const authenticateToken = (req, res, next) => {
