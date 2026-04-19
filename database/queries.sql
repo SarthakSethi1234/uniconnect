@@ -1,4 +1,3 @@
--- UniConnect Sample Key Queries
 USE uniconnect;
 
 -- 1. Recommendation System
@@ -6,7 +5,7 @@ USE uniconnect;
 SELECT DISTINCT u1.name AS student_1, u2.name AS student_2, c.course_name 
 FROM Student_Courses sc1
 JOIN Student_Courses sc2 ON sc1.course_id = sc2.course_id 
-    AND sc1.user_id < sc2.user_id -- prevent a-b, b-a duplicates
+    AND sc1.user_id < sc2.user_id 
 JOIN Users u1 ON sc1.user_id = u1.id
 JOIN Users u2 ON sc2.user_id = u2.id
 JOIN Courses c ON sc1.course_id = c.id;
@@ -30,7 +29,6 @@ JOIN Users u2 ON tm2.user_id = u2.id
 JOIN Team_Proposals tp ON tm1.proposal_id = tp.id;
 
 -- 4. Academic Influence Score Generation 
--- (If calculating manually instead of using Student_Reputation field)
 SELECT 
     u.name,
     (SELECT COUNT(*) FROM Team_Proposals tp WHERE tp.creator_id = u.id) * 5 + 

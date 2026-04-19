@@ -1,4 +1,3 @@
--- UniConnect Database Views
 USE uniconnect;
 
 -- 1. Admin Management View
@@ -19,7 +18,7 @@ LEFT JOIN Team_Proposals tp ON u.id = tp.creator_id
 LEFT JOIN Student_Reputation sr ON u.id = sr.user_id
 GROUP BY u.id;
 
--- 2. Proposal Summary View (Enhanced for report counts)
+-- 2. Proposal Summary View
 CREATE OR REPLACE VIEW Proposal_Summary_View AS
 SELECT 
     tp.id AS proposal_id,

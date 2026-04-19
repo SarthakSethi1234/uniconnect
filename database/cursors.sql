@@ -1,9 +1,9 @@
--- UniConnect Database Cursors
 USE uniconnect;
 
 DELIMITER //
 
 -- 1. Iterating proposals to generate reports
+DROP PROCEDURE IF EXISTS sp_generate_proposal_report;
 CREATE PROCEDURE sp_generate_proposal_report()
 BEGIN
     DECLARE done INT DEFAULT 0;
@@ -32,6 +32,7 @@ BEGIN
 END; //
 
 -- 2. Listing applicants per proposal
+DROP PROCEDURE IF EXISTS sp_list_applicants;
 CREATE PROCEDURE sp_list_applicants(IN p_proposal_id INT)
 BEGIN
     DECLARE done INT DEFAULT 0;
@@ -64,6 +65,7 @@ BEGIN
 END; //
 
 -- 3. Generating influence score report
+DROP PROCEDURE IF EXISTS sp_influence_score_report;
 CREATE PROCEDURE sp_influence_score_report()
 BEGIN
     DECLARE done INT DEFAULT 0;
@@ -96,6 +98,7 @@ BEGIN
 END; //
 
 -- 4. Skill popularity report
+DROP PROCEDURE IF EXISTS sp_skill_popularity_report;
 CREATE PROCEDURE sp_skill_popularity_report()
 BEGIN
     DECLARE done INT DEFAULT 0;
@@ -128,6 +131,7 @@ BEGIN
 END; //
 
 -- 5. Collaboration summary report
+DROP PROCEDURE IF EXISTS sp_collaboration_summary;
 CREATE PROCEDURE sp_collaboration_summary()
 BEGIN
     DECLARE done INT DEFAULT 0;
@@ -159,6 +163,7 @@ BEGIN
 END; //
 
 -- 6. Proposal summary report
+DROP PROCEDURE IF EXISTS sp_proposal_summary;
 CREATE PROCEDURE sp_proposal_summary()
 BEGIN
     DECLARE done INT DEFAULT 0;
@@ -191,6 +196,7 @@ BEGIN
 END; //
 
 -- 7. Recommendation iteration (simple loop)
+DROP PROCEDURE IF EXISTS sp_recommendations;
 CREATE PROCEDURE sp_recommendations(IN p_user_id INT)
 BEGIN
     DECLARE done INT DEFAULT 0;
@@ -228,6 +234,7 @@ END; //
 
 -- 8. Handle capacity reduction: When max_members is lowered, iterate pending applications
 --    and auto-reject those that exceed the new capacity limit.
+DROP PROCEDURE IF EXISTS sp_handle_capacity_reduction;
 CREATE PROCEDURE sp_handle_capacity_reduction(IN p_proposal_id INT, IN new_max INT)
 BEGIN
     DECLARE done INT DEFAULT 0;

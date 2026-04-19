@@ -12,12 +12,11 @@ app.use(express.json());
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_key_123';
 
 const dbConfig = {
-  host: process.env.DB_HOST || '127.0.0.1',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'uniconnect',
-  port: process.env.DB_PORT || 3306,
-  ssl: { rejectUnauthorized: false }
+  host: process.env.MYSQLHOST || process.env.DB_HOST || '127.0.0.1',
+  user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
+  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
+  database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'uniconnect',
+  port: process.env.MYSQLPORT || process.env.DB_PORT || 3306
 };
 
 const pool = mysql.createPool(dbConfig);
@@ -111,25 +110,33 @@ app.post('/api/users/resume', authenticateToken, async (req, res) => {
 
 // Full Profile Update (name, bio, major, grad_year, phone, photo, skills)
 app.put('/api/users/profile', authenticateToken, async (req, res) => {
+  const conn = await pool.getConnection();
   try {
     const { name, bio, major, grad_year, phone, profile_photo_url, skills } = req.body;
-    await pool.execute(
+    await conn.beginTransaction();
+
+    await conn.execute(
       'UPDATE Users SET name = ?, bio = ?, major = ?, grad_year = ?, phone = ?, profile_photo_url = ? WHERE id = ?',
       [name, bio, major, grad_year || null, phone || null, profile_photo_url || null, req.user.id]
     );
     // Update skills: delete all then re-insert
     if (skills !== undefined) {
-      await pool.execute('DELETE FROM Student_Skills WHERE user_id = ?', [req.user.id]);
+      await conn.execute('DELETE FROM Student_Skills WHERE user_id = ?', [req.user.id]);
       if (skills && skills.trim()) {
         const skillList = skills.split(',').map(s => s.trim()).filter(Boolean);
         for (const skill of skillList) {
-          await pool.execute('INSERT IGNORE INTO Student_Skills (user_id, skill_name) VALUES (?, ?)', [req.user.id, skill]);
+          await conn.execute('INSERT IGNORE INTO Student_Skills (user_id, skill_name) VALUES (?, ?)', [req.user.id, skill]);
         }
       }
     }
+
+    await conn.commit();
     res.json({ success: true });
   } catch (error) {
+    await conn.rollback();
     res.status(500).json({ error: error.message });
+  } finally {
+    conn.release();
   }
 });
 
@@ -223,34 +230,41 @@ app.post('/api/proposals', authenticateToken, async (req, res) => {
 
 // Edit a Proposal (creator only) — Trigger validates, cursor handles capacity reduction
 app.put('/api/proposals/:id', authenticateToken, async (req, res) => {
+  const conn = await pool.getConnection();
   try {
     const propId = req.params.id;
     const { title, description, requiredSkills, maxMembers, deadline } = req.body;
 
     // Verify this user is the creator
-    const [props] = await pool.query('SELECT creator_id, max_members FROM Team_Proposals WHERE id = ?', [propId]);
-    if (props.length === 0) return res.status(404).json({ error: 'Proposal not found.' });
-    if (props[0].creator_id !== req.user.id) return res.status(403).json({ error: 'Only the proposal creator can edit it.' });
+    const [props] = await conn.query('SELECT creator_id, max_members FROM Team_Proposals WHERE id = ?', [propId]);
+    if (props.length === 0) { conn.release(); return res.status(404).json({ error: 'Proposal not found.' }); }
+    if (props[0].creator_id !== req.user.id) { conn.release(); return res.status(403).json({ error: 'Only the proposal creator can edit it.' }); }
 
     const oldMax = props[0].max_members;
     const newMax = parseInt(maxMembers);
 
+    await conn.beginTransaction();
+
     // Run the UPDATE — the BEFORE UPDATE trigger will validate and log this
-    await pool.execute(
+    await conn.execute(
       `UPDATE Team_Proposals SET title = ?, description = ?, required_skills = ?, max_members = ?, deadline = ? WHERE id = ?`,
       [title, description, requiredSkills, newMax, deadline, propId]
     );
 
     // If max_members was reduced, call cursor procedure to auto-reject excess pending applications
     if (newMax < oldMax) {
-      await pool.query('CALL sp_handle_capacity_reduction(?, ?)', [propId, newMax]);
+      await conn.query('CALL sp_handle_capacity_reduction(?, ?)', [propId, newMax]);
     }
 
+    await conn.commit();
     res.json({ success: true });
   } catch (error) {
+    await conn.rollback();
     // Surface the trigger SIGNAL message cleanly
     const msg = error.sqlMessage || error.message;
     res.status(400).json({ error: msg });
+  } finally {
+    conn.release();
   }
 });
 
@@ -316,36 +330,49 @@ app.get('/api/proposals/:id/accepted-contacts', authenticateToken, async (req, r
 
 // Withdraw Application (Users pulling themselves out)
 app.delete('/api/applications/withdraw/:proposalId', authenticateToken, async (req, res) => {
+  const conn = await pool.getConnection();
   try {
     const propId = req.params.proposalId;
-    // Delete from applications, and Team_Members via application cascade or manually
-    await pool.execute('DELETE FROM Applications WHERE proposal_id = ? AND applicant_id = ?', [propId, req.user.id]);
-    await pool.execute('DELETE FROM Team_Members WHERE proposal_id = ? AND user_id = ?', [propId, req.user.id]);
+    await conn.beginTransaction();
+    // Delete from both tables atomically — if either fails, neither change persists
+    await conn.execute('DELETE FROM Applications WHERE proposal_id = ? AND applicant_id = ?', [propId, req.user.id]);
+    await conn.execute('DELETE FROM Team_Members WHERE proposal_id = ? AND user_id = ?', [propId, req.user.id]);
+    await conn.commit();
     res.json({ success: true });
   } catch (error) {
+    await conn.rollback();
     res.status(500).json({ error: error.message });
+  } finally {
+    conn.release();
   }
 });
 
 // Kick Participant out (Creator action)
 app.delete('/api/proposals/:id/members/:userId', authenticateToken, async (req, res) => {
+  const conn = await pool.getConnection();
   try {
     const propId = req.params.id;
     const targetUserId = req.params.userId;
-    
+
     // Verify Creator
-    const [props] = await pool.query('SELECT creator_id FROM Team_Proposals WHERE id = ?', [propId]);
+    const [props] = await conn.query('SELECT creator_id FROM Team_Proposals WHERE id = ?', [propId]);
     if (props.length === 0 || props[0].creator_id !== req.user.id) {
-       return res.status(403).json({ error: 'Not the creator of this proposal.' });
+      conn.release();
+      return res.status(403).json({ error: 'Not the creator of this proposal.' });
     }
 
-    // Remove from team
-    await pool.execute('DELETE FROM Team_Members WHERE proposal_id = ? AND user_id = ?', [propId, targetUserId]);
-    await pool.execute('UPDATE Applications SET status = "rejected" WHERE proposal_id = ? AND applicant_id = ?', [propId, targetUserId]);
-    
+    await conn.beginTransaction();
+    // Remove from team and mark application rejected atomically
+    await conn.execute('DELETE FROM Team_Members WHERE proposal_id = ? AND user_id = ?', [propId, targetUserId]);
+    await conn.execute('UPDATE Applications SET status = "rejected" WHERE proposal_id = ? AND applicant_id = ?', [propId, targetUserId]);
+    await conn.commit();
+
     res.json({ success: true });
   } catch (error) {
+    await conn.rollback();
     res.status(500).json({ error: error.message });
+  } finally {
+    conn.release();
   }
 });
 
@@ -472,9 +499,6 @@ app.get('/api/analytics/recommendations', authenticateToken, async (req, res) =>
 });
 
 const PORT = process.env.PORT || 5000;
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log('Enhanced UniConnect API running on port ' + PORT);
-  });
-}
-module.exports = app;
+app.listen(PORT, () => {
+  console.log('Enhanced UniConnect API running on port ' + PORT);
+});

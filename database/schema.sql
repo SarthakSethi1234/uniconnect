@@ -1,10 +1,6 @@
--- UniConnect Database Schema
--- Run this script first to set up the database and tables.
-
 CREATE DATABASE IF NOT EXISTS uniconnect;
 USE uniconnect;
 
--- 1. Users
 CREATE TABLE Users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -20,14 +16,12 @@ CREATE TABLE Users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Courses
 CREATE TABLE Courses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     course_name VARCHAR(200) NOT NULL,
     course_code VARCHAR(20) UNIQUE NOT NULL
 );
 
--- 3. Student_Courses (Many-to-many relationship)
 CREATE TABLE Student_Courses (
     user_id INT,
     course_id INT,
@@ -36,14 +30,12 @@ CREATE TABLE Student_Courses (
     FOREIGN KEY (course_id) REFERENCES Courses(id) ON DELETE CASCADE
 );
 
--- 4. Projects (can be external projects/hackathons for portfolio)
 CREATE TABLE Projects (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     description TEXT
 );
 
--- 5. Student_Projects (Many-to-many relationship)
 CREATE TABLE Student_Projects (
     user_id INT,
     project_id INT,
@@ -52,7 +44,6 @@ CREATE TABLE Student_Projects (
     FOREIGN KEY (project_id) REFERENCES Projects(id) ON DELETE CASCADE
 );
 
--- 6. Student_Skills
 CREATE TABLE Student_Skills (
     user_id INT,
     skill_name VARCHAR(50),
@@ -60,7 +51,6 @@ CREATE TABLE Student_Skills (
     FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
 );
 
--- 7. Team_Proposals
 CREATE TABLE Team_Proposals (
     id INT AUTO_INCREMENT PRIMARY KEY,
     creator_id INT NOT NULL,
@@ -76,7 +66,6 @@ CREATE TABLE Team_Proposals (
     FOREIGN KEY (creator_id) REFERENCES Users(id) ON DELETE CASCADE
 );
 
--- 8. Applications
 CREATE TABLE Applications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     proposal_id INT NOT NULL,
@@ -85,10 +74,9 @@ CREATE TABLE Applications (
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (proposal_id) REFERENCES Team_Proposals(id) ON DELETE CASCADE,
     FOREIGN KEY (applicant_id) REFERENCES Users(id) ON DELETE CASCADE,
-    UNIQUE (proposal_id, applicant_id) -- Prevents duplicate applications
+    UNIQUE (proposal_id, applicant_id) 
 );
 
--- 9. Team_Members
 CREATE TABLE Team_Members (
     proposal_id INT,
     user_id INT,
@@ -98,7 +86,6 @@ CREATE TABLE Team_Members (
     FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
 );
 
--- 10. Student_Reputation
 CREATE TABLE Student_Reputation (
     user_id INT PRIMARY KEY,
     influence_score INT DEFAULT 0,
@@ -106,19 +93,17 @@ CREATE TABLE Student_Reputation (
     FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
 );
 
--- 11. Activity_Log
 CREATE TABLE Activity_Log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     proposal_id INT,
-    action_type VARCHAR(50), -- e.g., 'APPLY', 'ACCEPT', 'REJECT'
+    action_type VARCHAR(50), 
     description TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE SET NULL,
     FOREIGN KEY (proposal_id) REFERENCES Team_Proposals(id) ON DELETE SET NULL
 );
 
--- 12. Reported_Proposals
 CREATE TABLE Reported_Proposals (
     id INT AUTO_INCREMENT PRIMARY KEY,
     proposal_id INT,

@@ -20,7 +20,7 @@ export default function AdminPanel() {
     } catch (e) { console.error(e); setLoading(false); }
   };
 
-  useEffect(() => { fetchAdminData(); }, []); // eslint-disable-line
+  useEffect(() => { fetchAdminData(); }, []); 
 
   const deleteUser = async (id) => {
     try {

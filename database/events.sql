@@ -1,4 +1,3 @@
--- UniConnect Database Events
 USE uniconnect;
 
 SET GLOBAL event_scheduler = ON;

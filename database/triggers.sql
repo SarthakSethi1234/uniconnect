@@ -1,4 +1,3 @@
--- UniConnect Database Triggers
 USE uniconnect;
 
 DELIMITER //
@@ -15,7 +14,6 @@ BEGIN
 END; //
 
 -- 2. Prevent duplicate applications
--- Note: schema already has a UNIQUE constraint, but this returns a custom error message
 DROP TRIGGER IF EXISTS trg_2_prevent_duplicate_app;
 CREATE TRIGGER trg_2_prevent_duplicate_app 
 BEFORE INSERT ON Applications
@@ -99,7 +97,7 @@ BEGIN
     AND max_members <= (SELECT COUNT(*) FROM Team_Members WHERE proposal_id = NEW.proposal_id);
 END; //
 
--- Initialize Student_Reputation when a new User is created (Helper Trigger)
+-- Initialize Student_Reputation when a new User is created
 DROP TRIGGER IF EXISTS trg_init_reputation;
 CREATE TRIGGER trg_init_reputation 
 AFTER INSERT ON Users
@@ -111,7 +109,7 @@ BEGIN
     END IF;
 END; //
 
--- 7. Log actions into Activity_Log (apply/accept/reject)
+-- 7. Log actions into Activity_Log
 DROP TRIGGER IF EXISTS trg_7_log_app_action;
 CREATE TRIGGER trg_7_log_app_action 
 AFTER UPDATE ON Applications
@@ -164,7 +162,7 @@ BEGIN
     WHERE tp.id = OLD.proposal_id;
 END; //
 
--- 10. Validate proposal edits: Block editing closed/completed proposals, prevent past deadlines
+-- 10. Validate proposal edits
 DROP TRIGGER IF EXISTS trg_10_validate_proposal_edit;
 CREATE TRIGGER trg_10_validate_proposal_edit
 BEFORE UPDATE ON Team_Proposals
@@ -200,8 +198,8 @@ CREATE TRIGGER trg_users_insert_val
 BEFORE INSERT ON Users
 FOR EACH ROW
 BEGIN
-    IF NEW.email NOT LIKE '%@snu.edu.in' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Email must be a valid SNU email (@snu.edu.in)';
+    IF NEW.email NOT LIKE '%@gmail.com' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Email must be a valid email (@gmail.com)';
     END IF;
     IF NEW.phone IS NOT NULL AND NEW.phone NOT REGEXP '^[0-9]{10}$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Phone number must be exactly 10 digits';
@@ -214,8 +212,8 @@ CREATE TRIGGER trg_users_update_val
 BEFORE UPDATE ON Users
 FOR EACH ROW
 BEGIN
-    IF NEW.email NOT LIKE '%@snu.edu.in' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Email must be a valid SNU email (@snu.edu.in)';
+    IF NEW.email NOT LIKE '%@gmail.com' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Email must be a valid email (@gmail.com)';
     END IF;
     IF NEW.phone IS NOT NULL AND NEW.phone NOT REGEXP '^[0-9]{10}$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Phone number must be exactly 10 digits';
